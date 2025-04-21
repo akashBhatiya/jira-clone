@@ -49,8 +49,29 @@ const Login: React.FC = () => {
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      navigate("/dashboard");
+      const resp = await signInWithPopup(auth, provider);
+      const resp2 = await apiClient.post<{
+        setSession: boolean;
+        dbUser: Types.IUser;
+      }>("/auth/register", {
+        user: resp.user,
+        displayName: resp.user.displayName,
+        provider: "google",
+      });
+
+      if (
+        resp2.data?.setSession &&
+        window.location.pathname !== "/organization-setup"
+      ) {
+        navigate("/organization-setup");
+      } else {
+        if (resp2.data?.dbUser.role === "admin") {
+          navigate("/admin/teams");
+        } else {
+          navigate("/dashboard");
+        }
+      }
+      // navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "Failed to login with Google");
     } finally {

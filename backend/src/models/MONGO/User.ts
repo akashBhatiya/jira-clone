@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema<Types.IUser>(
   {
     uid: {
       type: String,
-      required: true,
       unique: true,
     },
     email: {
@@ -21,7 +20,6 @@ const userSchema = new mongoose.Schema<Types.IUser>(
     },
     provider: {
       type: String,
-      required: true,
     },
     organization: {
       type: mongoose.Schema.Types.ObjectId,
@@ -35,7 +33,11 @@ const userSchema = new mongoose.Schema<Types.IUser>(
     status: {
       type: String,
       required: true,
-      enum: ["active", "inactive"],
+      enum: ["active", "inactive", "pending"],
+    },
+    invitedby: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   {

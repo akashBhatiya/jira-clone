@@ -7,7 +7,8 @@ export interface IUser {
   photoURL: string;
   provider: string;
   organization: IOrganization | string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "pending";
+  invitedby?: IUser | string;
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -11,7 +11,7 @@ import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
 import { apiClient } from "../utils/apiclient";
 import logo from "../assets/logo.png";
-
+import * as Types from "../Types/index";
 const SignUp: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -40,12 +40,26 @@ const SignUp: React.FC = () => {
     try {
       const resp = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(resp.user, { displayName: displayName });
-      const resp2 = await apiClient.post("/auth/register", {
+      const resp2 = await apiClient.post<{
+        setSession: boolean;
+        dbUser: Types.IUser;
+      }>("/auth/register", {
         user: resp.user,
         displayName: displayName,
+        provider: "email",
       });
-
-      navigate("/organization-setup");
+      if (
+        resp2.data?.setSession &&
+        window.location.pathname !== "/organization-setup"
+      ) {
+        navigate("/organization-setup");
+      } else {
+        if (resp2.data?.dbUser.role === "admin") {
+          navigate("/admin/teams");
+        } else {
+          navigate("/dashboard");
+        }
+      }
     } catch (err: any) {
       setError(err.message || "Failed to create account");
     } finally {
@@ -59,8 +73,28 @@ const SignUp: React.FC = () => {
 
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      navigate("/dashboard");
+      const resp = await signInWithPopup(auth, provider);
+      const resp2 = await apiClient.post<{
+        setSession: boolean;
+        dbUser: Types.IUser;
+      }>("/auth/register", {
+        user: resp.user,
+        displayName: resp.user.displayName,
+        provider: "google",
+      });
+
+      if (
+        resp2.data?.setSession &&
+        window.location.pathname !== "/organization-setup"
+      ) {
+        navigate("/organization-setup");
+      } else {
+        if (resp2.data?.dbUser.role === "admin") {
+          navigate("/admin/teams");
+        } else {
+          navigate("/dashboard");
+        }
+      }
     } catch (err: any) {
       setError(err.message || "Failed to sign up with Google");
     } finally {

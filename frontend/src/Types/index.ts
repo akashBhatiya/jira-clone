@@ -15,7 +15,8 @@ export interface IUser {
   photoURL: string;
   provider: string;
   role?: "admin" | "pm" | "tm" | "user";
-  status?: "active" | "inactive";
+  status?: "active" | "inactive" | "pending";
+  invitedby?: IUser | string;
   createdAt?: Date;
   updatedAt?: Date;
 }

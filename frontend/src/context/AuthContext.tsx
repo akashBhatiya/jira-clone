@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError("Failed to fetch user details");
         console.error(error);
         setLoading(false);
-        window.location.href = "/login";
+        // window.location.href = "/login";
       }
     };
 
