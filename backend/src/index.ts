@@ -7,7 +7,6 @@ import bodyParser from "body-parser";
 import { errorHandler } from "./middleware/errorHandler";
 import router from "./routes/index";
 import { testConnection } from "./config/database";
-import { syncDatabase } from "./models/POSTGRESQL";
 import { Server } from "socket.io";
 import SocketService from "./services/socket.service";
 import SocketEventHandler from "./utils/socketEventHandler";
@@ -55,16 +54,12 @@ app.use(errorHandler);
 // Database connection and sync
 const initializeDatabase = async () => {
   await testConnection();
-  //   const forceSync = process.env.NODE_ENV === 'development' && process.env.DB_FORCE_SYNC === 'true';
-  // await syncDatabase(forceSync);
 };
 
-// Initialize database and start server
 const startServer = async () => {
   try {
     await initializeDatabase();
 
-    // Start the server
     httpServer.listen(port, () => {
       console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
     });

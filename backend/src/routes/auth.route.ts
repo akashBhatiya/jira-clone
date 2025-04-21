@@ -2,11 +2,11 @@ import express, { Router, Request, Response } from "express";
 const router: Router = express.Router();
 
 import * as authController from "../controllers/auth.controller";
+import { authenticate } from "../middleware/authMiddleware";
 
-router.get("/register", authController.register);
-router.get("/login", authController.loginUser);
-router.get("/me", authController.getUserDetails);
-router.get("/update", authController.updateUser);
-router.get("/invite", authController.inviteUser);
+router.post("/register", authController.register);
+router.post("/organization", authController.createOrganization);
+router.get("/me", authenticate, authController.getUserDetails);
+router.get("/get-users", authenticate, authController.getUsers);
 
 export default router;

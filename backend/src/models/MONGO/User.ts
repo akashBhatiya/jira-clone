@@ -15,20 +15,27 @@ const userSchema = new mongoose.Schema<Types.IUser>(
     },
     displayName: {
       type: String,
-      required: true,
     },
     photoURL: {
       type: String,
-      default: null,
     },
     provider: {
       type: String,
       required: true,
     },
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+    },
     role: {
       type: String,
       required: true,
       enum: ["admin", "pm", "tm", "user"],
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["active", "inactive"],
     },
   },
   {

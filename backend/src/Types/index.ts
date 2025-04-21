@@ -6,6 +6,8 @@ export interface IUser {
   role: "admin" | "pm" | "tm" | "user";
   photoURL: string;
   provider: string;
+  organization: IOrganization | string;
+  status: "active" | "inactive";
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -18,25 +20,10 @@ export interface IVersion {
   updatedAt?: Date;
 }
 
-export interface IChat {
-  userId: string;
-  title: string;
-  model: string;
-  books: string[];
-  type: "anonym" | "free" | "premium";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IMessage {
+export interface IOrganization {
   _id: string;
-  role: "system" | "user" | "assistant";
-  content: string;
-  reasoning_content: string;
-  books: string[];
-  model: string;
-  chatId: IChat;
-  createdAt: Date;
-  updatedAt: Date;
-  usage: any;
+  name: string;
+  description: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

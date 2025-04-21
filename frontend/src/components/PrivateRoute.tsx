@@ -1,22 +1,29 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
+import * as Types from "../Types";
+import { Outlet } from "react-router-dom";
+
 interface PrivateRouteProps {
   element: React.ComponentType;
+  route: Types.RouteType;
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ element: Element }) => {
-  const { user, loading } = useAuth();
+const PrivateRoute: React.FC<PrivateRouteProps> = ({
+  element: Element,
+  route,
+}) => {
+  const { dbUser, loading } = useAuth();
   const navigate = useNavigate();
 
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !dbUser) {
       navigate("/login");
     }
     setCheckingAuth(false);
-  }, [user, loading]);
+  }, [dbUser, loading]);
 
   if (checkingAuth) {
     return (
@@ -26,6 +33,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ element: Element }) => {
     );
   }
 
+  // If the route has a layout, render the layout with the Outlet component
+  if (route.layout) {
+    const Layout = route.layout;
+    return <Layout>{route.children ? <Outlet /> : <Element />}</Layout>;
+  }
+
+  // Otherwise just render the element
   return <Element />;
 };
 

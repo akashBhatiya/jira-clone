@@ -1,65 +1,45 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { auth } from "../config/firebase";
-import {
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
-import { FcGoogle } from "react-icons/fc";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import logo from "../assets/logo.png";
 import { apiClient } from "../utils/apiclient";
-import * as Types from "../Types/index";
+import logo from "../assets/logo.png";
+import { useAuth } from "../context/AuthContext";
 
-const Login: React.FC = () => {
+const OrganizationSetup: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [orgName, setOrgName] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { dbUser } = useAuth();
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
-    try {
-      const resp = await signInWithEmailAndPassword(auth, email, password);
-      const resp2 = await apiClient.get<{ user: Types.IUser }>(
-        "/auth/me?uid=" + resp.user.uid
-      );
-      if (resp2.data?.user) {
-        if (resp2.data?.user?.role === "admin") {
-          navigate("/admin/teams");
-        } else {
-          navigate("/dashboard");
-        }
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to login");
-    } finally {
-      setLoading(false);
+    if (!orgName.trim()) {
+      setError("Organization name is required");
+      return;
     }
-  };
 
-  const handleGoogleLogin = async () => {
-    setError("");
     setLoading(true);
 
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      navigate("/dashboard");
+      await apiClient.post("/auth/organization", {
+        name: orgName,
+        description: description,
+        uid: dbUser?.uid,
+      });
+      navigate("/admin/teams");
     } catch (err: any) {
-      setError(err.message || "Failed to login with Google");
+      setError(err.message || "Failed to create organization");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-white to-purple-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-white to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -81,7 +61,7 @@ const Login: React.FC = () => {
             transition={{ delay: 0.3 }}
             className="mt-6 text-center text-3xl font-extrabold text-gray-900"
           >
-            Welcome Back
+            Set Up Your Organization
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
@@ -89,13 +69,7 @@ const Login: React.FC = () => {
             transition={{ delay: 0.4 }}
             className="mt-2 text-center text-sm text-gray-600"
           >
-            Or{" "}
-            <Link
-              to="/signup"
-              className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
-            >
-              create a new account
-            </Link>
+            Create your organization to get started
           </motion.p>
         </div>
         <motion.form
@@ -103,45 +77,42 @@ const Login: React.FC = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
           className="mt-8 space-y-6"
-          onSubmit={handleEmailLogin}
+          onSubmit={handleSubmit}
         >
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="email-address"
+                htmlFor="org-name"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email address
+                Organization Name
               </label>
               <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="org-name"
+                name="org-name"
+                type="text"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm transition duration-200"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your organization name"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
               />
             </div>
             <div>
               <label
-                htmlFor="password"
+                htmlFor="description"
                 className="block text-sm font-medium text-gray-700"
               >
-                Password
+                Description
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
+              <textarea
+                id="description"
+                name="description"
+                rows={4}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm transition duration-200"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Describe your organization (optional)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
             </div>
           </div>
@@ -186,43 +157,17 @@ const Login: React.FC = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Signing in...
+                  Creating organization...
                 </span>
               ) : (
-                "Sign in"
+                "Create Organization"
               )}
             </motion.button>
           </div>
         </motion.form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
-            >
-              <FcGoogle className="h-5 w-5 mr-2" />
-              Sign in with Google
-            </motion.button>
-          </div>
-        </div>
       </motion.div>
     </div>
   );
 };
 
-export default Login;
+export default OrganizationSetup;

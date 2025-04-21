@@ -1,49 +1,68 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { auth } from '../config/firebase';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { FcGoogle } from 'react-icons/fc';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { auth } from "../config/firebase";
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  updateProfile,
+} from "firebase/auth";
+import { FcGoogle } from "react-icons/fc";
+import { motion } from "framer-motion";
+import { apiClient } from "../utils/apiclient";
+import logo from "../assets/logo.png";
 
 const SignUp: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (!displayName.trim()) {
+      setError("Display name is required");
       return;
     }
 
     setLoading(true);
 
     try {
-      const user = await createUserWithEmailAndPassword(auth, email, password);
-      navigate('/dashboard');
+      const resp = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(resp.user, { displayName: displayName });
+      const resp2 = await apiClient.post("/auth/register", {
+        user: resp.user,
+        displayName: displayName,
+      });
+
+      navigate("/organization-setup");
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      setError(err.message || "Failed to create account");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSignup = async () => {
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err: any) {
-      setError(err.message || 'Failed to sign up with Google');
+      setError(err.message || "Failed to sign up with Google");
     } finally {
       setLoading(false);
     }
@@ -58,10 +77,18 @@ const SignUp: React.FC = () => {
         className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl"
       >
         <div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex justify-center"
+          >
+            <img src={logo} alt="Logo" className="h-16 w-auto" />
+          </motion.div>
           <motion.h2
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
             className="mt-6 text-center text-3xl font-extrabold text-gray-900"
           >
             Create Account
@@ -69,11 +96,14 @@ const SignUp: React.FC = () => {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.4 }}
             className="mt-2 text-center text-sm text-gray-600"
           >
-            Or{' '}
-            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
+            Or{" "}
+            <Link
+              to="/login"
+              className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+            >
               sign in to your account
             </Link>
           </motion.p>
@@ -81,13 +111,35 @@ const SignUp: React.FC = () => {
         <motion.form
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
           className="mt-8 space-y-6"
           onSubmit={handleEmailSignup}
         >
           <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="display-name"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Display Name
+              </label>
+              <input
+                id="display-name"
+                name="display-name"
+                type="text"
+                autoComplete="name"
+                required
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm transition duration-200"
+                placeholder="Enter your display name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="email-address"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email address
               </label>
               <input
@@ -103,7 +155,10 @@ const SignUp: React.FC = () => {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <input
@@ -119,7 +174,10 @@ const SignUp: React.FC = () => {
               />
             </div>
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="confirm-password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Confirm Password
               </label>
               <input
@@ -156,14 +214,30 @@ const SignUp: React.FC = () => {
             >
               {loading ? (
                 <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Creating account...
                 </span>
               ) : (
-                'Sign up'
+                "Sign up"
               )}
             </motion.button>
           </div>
@@ -175,7 +249,9 @@ const SignUp: React.FC = () => {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white text-gray-500">
+                Or continue with
+              </span>
             </div>
           </div>
 

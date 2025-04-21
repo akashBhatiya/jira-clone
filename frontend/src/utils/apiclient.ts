@@ -5,6 +5,7 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
+import { auth } from "../config/firebase";
 
 // Types for API responses
 interface ApiResponse<T = any> {
@@ -44,11 +45,15 @@ class ApiClient {
   private setupInterceptors(): void {
     // Request interceptor
     this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        // Get token from localStorage or your auth service
-        const token = localStorage.getItem("authToken");
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+      async (config: InternalAxiosRequestConfig) => {
+        try {
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            const token = await currentUser.getIdToken();
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+        } catch (error) {
+          console.error("Error getting Firebase token:", error);
         }
         return config;
       },
@@ -131,9 +136,7 @@ class ApiClient {
   }
 
   private handleUnauthorized(): void {
-    // Clear auth token
-    localStorage.removeItem("authToken");
-    // Redirect to login page or trigger auth refresh
+    // Redirect to login page
     window.location.href = "/login";
   }
 
